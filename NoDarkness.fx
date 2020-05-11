@@ -62,7 +62,7 @@ sampler SamplerAvgLuma { Texture = TexAvgLuma; };
 float PS_Luma(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
 {
     float4 color = tex2Dlod(ReShade::BackBuffer, float4(texcoord, 0, 0));
-    return dot(color.xyz, float3(f_StrengthCoeff.xxx));
+    return dot(color, f_StrengthCoeff);
 }
 
 float PS_AvgLuma(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
@@ -72,7 +72,7 @@ float PS_AvgLuma(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Targ
 
 float3 PS_Adaption(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
 {
-	float avgLuma = max(LimitStrength, tex2Dlod(SamplerAvgLuma, float4(0.0.xx, 0, 0)).x);
+	float avgLuma = max(LimitStrength, tex2Dlod(SamplerAvgLuma,0).x);
 	float3 colorInput = tex2Dlod(ReShade::BackBuffer, float4(texcoord, 0, 0)).rgb;
 
 	float3 color = colorInput / avgLuma;
