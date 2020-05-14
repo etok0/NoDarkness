@@ -17,8 +17,8 @@ uniform float f_StrengthCoeff < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "Strength Divider";
 	ui_category = "General settings";
 	ui_tooltip = "Smaller = Stronger\n"
-		"Default = 2";
-> = 2.0;
+		"Default = 3";
+> = 3.0;
 
 uniform float f_LerpCoef< __UNIFORM_SLIDER_FLOAT1
 	ui_min = 0.0; ui_max = 1.0;
@@ -47,14 +47,14 @@ uniform float LimitStrength <
 
 
 uniform bool Enable_log <
-	ui_tooltip = "Use to further reduce Clipping of whites";
-ui_category = "Use to reduce Clipping";
-> = false;
+	ui_category = "Use to further reduce Clipping of whites";
+	ui_tooltip = "Default = true";
+> = true;
 
-uniform bool Enable_atan <
-	ui_tooltip = "Use to further reduce Clipping of whites";
-ui_category = "Use to reduce Clipping";
-> = false;
+uniform bool Enable_atan <	
+	ui_category = "Use to further reduce Clipping of whites";
+	ui_tooltip = "Default = true";
+> = true;
 
 texture2D TexLuma { Width = 256; Height = 256; Format = R8; MipLevels = 7; };
 sampler SamplerLuma { Texture = TexLuma; };
@@ -75,9 +75,8 @@ float PS_AvgLuma(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Targ
 
 float3 PS_Adaption(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
 {
-    float3 colorInput = tex2Dlod(ReShade::BackBuffer, float4(texcoord, 0, 0));
-    float AvgLuma = max(LimitStrength, tex2Dlod(SamplerAvgLuma, 0).x);
-    float3 color = colorInput / AvgLuma;
+    float3 colorInput = tex2Dlod(ReShade::BackBuffer, float4(texcoord, 0, 0)).xyz;
+    float3 color = colorInput / max(LimitStrength, tex2Dlod(SamplerAvgLuma, 0).x);
     
     if (Enable_log) color = log(1 + color);
     if (Enable_atan) color = atan(color);
