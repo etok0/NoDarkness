@@ -1,3 +1,5 @@
+// NoDarkness by Etok
+
 #include "ReShade.fxh"
 #include "ReShadeUI.fxh"
 
@@ -28,14 +30,21 @@ uniform float f_LerpCoef< __UNIFORM_SLIDER_FLOAT1
 		"Default = 0.8";
 > = 0.8;
 
+uniform int FuncW < __UNIFORM_RADIO_INT1
+	ui_label = "Function to reduce clipping of whites";
+	ui_tooltip = "";
+	ui_items = "Log()\0Atan()\0None\0";
+	ui_category = "Function to reduce clipping of whites";
+> = 0;
+
 uniform float LimitStrength <
 	ui_min = 0.00001; ui_max = 1;
 	ui_label = "LimitStrength";
 	ui_category = "General settings";
-	ui_tooltip = "Default = 0.0001\n"
+	ui_tooltip = "Default = 0.01\n"
 		"Min = 0.00001\n"
 		"Max = 1.0";
-> = 0.0001;
+> = 0.01;
 
 texture2D TexLuma { Width = 256; Height = 256; Format = R8; MipLevels = 7; };
 sampler SamplerLuma { Texture = TexLuma; };
@@ -57,11 +66,20 @@ float PS_AvgLuma(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Targ
 float3 PS_Adaption(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
 {
     float3 colorInput = tex2Dlod(ReShade::BackBuffer, float4(texcoord, 0, 0)).xyz;
-	float avgLuma = tex2Dlod(SamplerAvgLuma, float4(0.0.xx, 0, 0)).x;
-    return lerp(colorInput, sin(atan(colorInput / max(LimitStrength, avgLuma)) - 0.5) + 0.5, (1 - avgLuma) * f_LerpCoef);
+    float avgLuma = tex2Dlod(SamplerAvgLuma, float4(0.0.xx, 0, 0)).x;
+    float3 color = colorInput / max(LimitStrength, avgLuma);
+
+    switch(FuncW)
+	{
+		case 0:{ color = lerp(colorInput, sin(log(1 + color) - 0.5) + 0.5, (1 - avgLuma) * f_LerpCoef); break; } // Log
+		case 1:{ color = lerp(colorInput, sin(atan(color) - 0.5) + 0.5, (1 - avgLuma) * f_LerpCoef); break; } // Atan
+		case 2:{ color = lerp(colorInput, color, (1 - avgLuma) * f_LerpCoef); break; } // None
+	}
+
+    return color;
 }
 
-technique NoDarkness
+technique NoDarkness<ui_tooltip = "Variation of Auto-Exposure by Etok";>
 {
     pass Luma
     {
@@ -69,8 +87,8 @@ technique NoDarkness
         PixelShader = PS_Luma;
         RenderTarget = TexLuma;
     }
-
-	pass AvgLuma
+    
+    pass AvgLuma
     {
         VertexShader = PostProcessVS;
         PixelShader = PS_AvgLuma;
